@@ -4,7 +4,46 @@ import uproot  # For reading ROOT files
 import matplotlib.pyplot as plt  # Plotting library
 import zfit  # Fitting library
 import hist  # Histogram library
-from hepstats.splot import compute_sweights  # For sWeights computation
+# from hepstats.splot import compute_sweights  # For sWeights computation
+
+def eval_pdf(model, x, params=None, allow_extended=False):
+    """Compute pdf of model at a given point x and for given parameters values"""
+
+    if params is None:
+        params = {}
+
+    def pdf(model, x):
+        ret = model.ext_pdf(x) if model.is_extended and allow_extended else model.pdf(x)
+
+        return np.array(ret)
+
+    for param in model.get_params():
+        if param in params:
+            value = params[param]["value"]
+            param.set_value(value)
+    return pdf(model, x)
+
+
+def compute_sweights(model, x, weights=None):
+    if weights is None:
+        weights = np.ones(len(x))
+
+    models = model.get_models()
+    yields = [m.get_yield() for m in models]
+
+    # p = np.vstack([np.array(m) for m in models]).T
+    # Nx = np.array(model.ext_pdf(data))*weights
+    p = np.vstack([eval_pdf(m, x)*weights for m in models]).T
+    Nx = eval_pdf(model, x, allow_extended=True)*weights
+    pN = p / Nx[:, None]
+
+    Vinv = (pN).T.dot(pN)
+    V = np.linalg.inv(Vinv)
+
+    sweights = p.dot(V) / Nx[:, None]
+
+    return {y: sweights[:, i] for i, y in enumerate(yields)}
+
 import json  # For reading JSON files
 from myconstants import *
 import tools  # Some helpful functions
@@ -247,6 +286,7 @@ else:
     if len(args.binned) == 2:
         # Data in bins
         datai.query(f"({args.binned[0]}<q2) &(q2<{args.binned[1]})", inplace=True)
+datai = datai[:100000]
 data = zfit.Data.from_pandas(datai, obs=angles)
 
 
@@ -348,6 +388,7 @@ while i < ntoys:
         yaml.dump(paramdict, yaml_file, default_flow_style=False)
 
     # Compute sWeights
+    sweights = compute_sweights(pdfsweights, data)
     try:
         sweights = compute_sweights(pdfsweights, data)
     except Exception as e:
