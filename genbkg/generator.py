@@ -39,26 +39,24 @@ pdf_cosl = zfit.pdf.Legendre(obs=cosl, coeffs=[a1_cosl, a2_cosl])
 
 # Create the second background PDF component with a correlation between the b_mass and q2
 class CorrelatedPDF(zfit.pdf.ZPDF):
-    _PARAMS = ['lambda_bmass']
+    _PARAMS = []
 
     def _unnormalized_pdf(self, x):
         q2, _, b_mass, _, _ = zfit.z.unstack_x(x)
-        lambda_bmass = self.params['lambda_bmass']
 
-        return zfit.z.numpy.exp(lambda_bmass * b_mass * q2)
+        return zfit.z.numpy.exp(- 5 * (b_mass-5.28)*q2 - q2)
 
-pdf_corr = CorrelatedPDF(obs=space, lambda_bmass=lambda_bmass)
+pdf_corr = CorrelatedPDF(obs=space)
 
 # Combine into the 5D background PDF
 pdf1_bkg = zfit.pdf.ProductPDF([pdf_qsq, pdf_mkpi, pdf_bmass, pdf_cosh, pdf_cosl], obs=space)
-pdf2_bkg = zfit.pdf.ProductPDF([pdf_mkpi, pdf_cosh, pdf_cosl, pdf_corr], obs=space)
+pdf2_bkg = zfit.pdf.ProductPDF([pdf_corr, pdf_mkpi, pdf_bmass, pdf_cosh, pdf_cosl], obs=space)
 
 # Generate background events
-n_events = int(args.n / 2)  # Generate half of the events from each background component to maintain the same total number of events
-data1_bkg = pdf1_bkg.sample(n_events).to_pandas()  # Generate events and convert to pandas DataFrame for easier manipulation
-data1_bkg["bkg_type"] = np.zeros(n_events, dtype=int)  # Label for the first background type
-data2_bkg = pdf2_bkg.sample(n_events).to_pandas()
-data2_bkg["bkg_type"] = np.ones(n_events, dtype=int)  # Label for the second background type
+data1_bkg = pdf1_bkg.sample(int(0.5 * args.n)).to_pandas()  # Generate events and convert to pandas DataFrame for easier manipulation
+data1_bkg["bkg_type"] = np.zeros(len(data1_bkg), dtype=int)  # Label for the first background type
+data2_bkg = pdf2_bkg.sample(int(0.5 * args.n)).to_pandas()
+data2_bkg["bkg_type"] = np.ones(len(data2_bkg), dtype=int)  # Label for the second background type
 
 data_bkg = pd.concat([data1_bkg, data2_bkg], ignore_index=True)  # Combine the two background datasets
 
@@ -74,4 +72,4 @@ with uproot.recreate(output_file) as root_file:
         "cosThetaL": data_bkg['cosThetaL'].values,
         "bkg_type": data_bkg['bkg_type'].values,
     }
-print(f"Generated {n_events} background events and saved to {output_file}.")
+print(f"Generated {len(data_bkg)} background events and saved to {output_file}.")
