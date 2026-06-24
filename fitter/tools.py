@@ -103,4 +103,6 @@ def parser():
     parser.add_argument('--fix_to_truth', type=str, help="coefficients fixed to their truth", default=[], nargs='+')
     parser.add_argument('--fix_to_value', type=str, help="coefficients fixed to a value", default=[], nargs='+')
     parser.add_argument('--constrain', type=str, help="constrain coefficients", default=[], nargs='+')  
+    parser.add_argument("--background",type=str,default="../genbkg/background_toy.root",help="Input ROOT file containing the background toy tree",)
+    parser.add_argument("--background-tree",type=str,default="background",help="Background tree name",)
     return parser.parse_args()
