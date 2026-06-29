@@ -517,15 +517,15 @@ sigma_sig_2 = zfit.Parameter("sigma_sig_2", 0.02134, 0.006, 0.050)
 
 frac_cb1 = zfit.Parameter("frac_cb1", 0.631, 0.0, 1.0)
 
-alphal_1 = zfit.Parameter("alphal_1", 1.408764360554104)
-nl_1 = zfit.Parameter("nl_1", 4.9932457252553215)
-alphar_1 = zfit.Parameter("alphar_1", 2.24382204753892)
-nr_1 = zfit.Parameter("nr_1", 3.9906927031900836)
+alphal_1 = zfit.Parameter("alphal_1", 1.4112223895658047)
+nl_1     = zfit.Parameter("nl_1",     4.7663298220603485)
+alphar_1 = zfit.Parameter("alphar_1", 2.283215192055652)
+nr_1     = zfit.Parameter("nr_1",     2.51561783579001)
 
-alphal_2 = zfit.Parameter("alphal_2", 2.1039229759504723)
-nl_2 = zfit.Parameter("nl_2", 0.4114053501482225)
-alphar_2 = zfit.Parameter("alphar_2", 2.30141200703702)
-nr_2 = zfit.Parameter("nr_2", 3.439912759983121)
+alphal_2 = zfit.Parameter("alphal_2", 2.0960411025639716)
+nl_2     = zfit.Parameter("nl_2",     0.21353297304073857)
+alphar_2 = zfit.Parameter("alphar_2", 2.431796143783731)
+nr_2     = zfit.Parameter("nr_2",     1.353294122042274)
 
 for p in [alphal_1, nl_1, alphar_1, nr_1, alphal_2, nl_2, alphar_2, nr_2]:
     p.floating = False
@@ -553,17 +553,23 @@ fitpdf_mass_cb2 = zfit.pdf.DoubleCB(
 fitpdf_mass = zfit.pdf.SumPDF([fitpdf_mass_cb1, fitpdf_mass_cb2], fracs=frac_cb1)
 
 lambda_bkg = zfit.Parameter("lambda_bkg", -0.2, -2.0, 0.0)
-a1_cosh = zfit.Parameter("a1_cosh", 0.0, -0.5, 0.5)
-a2_cosh = zfit.Parameter("a2_cosh", -0.2, -0.8, 0.8)
+a1_cosh = zfit.Parameter("a1_cosh", 0.0, -10, 10)
+a2_cosh = zfit.Parameter("a2_cosh", -0.2, -10, 10)
 
-a1_cosl = zfit.Parameter("a1_cosl", 0.0, -0.5, 0.5)
-a2_cosl = zfit.Parameter("a2_cosl", -0.4, -0.8, 0.8)
+a1_cosl = zfit.Parameter("a1_cosl", 0.0, -10, 10)
+a2_cosl = zfit.Parameter("a2_cosl", -0.4, -10, 10)
 
 lambda_bkg.floating = True
 a1_cosh.floating = False
 a2_cosh.floating = False
 a1_cosl.floating = False
 a2_cosl.floating = False
+
+# frac_cb1.floating = False
+# mu_sig.floating = False
+# sigma_sig_1.floating = False
+# sigma_sig_2.floating = False
+# lambda_bkg.floating = False
 
 fitpdf_bkg_mass = zfit.pdf.Exponential(obs=mass, lambda_=lambda_bkg)
 fitpdf_bkg_cosh = zfit.pdf.Legendre(obs=cosh, coeffs=[a1_cosh, a2_cosh])
@@ -1220,7 +1226,7 @@ for i in range(ntoys):
         result.hesse(
             method="minuit_hesse",
             name="hesse",
-            weightcorr="sumw2",
+            # weightcorr="sumw2",
         )
         print("Hesse finished.")
     except Exception as e:
@@ -1262,7 +1268,7 @@ for i in range(ntoys):
     try:
         covmat = result.covariance(
             method="minuit_hesse",
-            weightcorr="sumw2",
+            # weightcorr="sumw2",
         )
     except Exception as e:
         print("Warning: covariance calculation failed.")
