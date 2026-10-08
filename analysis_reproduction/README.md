@@ -86,7 +86,7 @@ python -u moments.py \
   --input "$PW/coverage_toys/0.h5" --moment-input "$MOM/0.h5" \
   --data "$LEON/massless_high_stats/Toyevents_forAnja_pw.root" \
   --name pw_fixedsample --qsq 1.1 19.0 --mKpi 0.746 1.5 \
-  --nbins 15 --no-center --error-option per-toy
+  --nbins 30 --no-center --error-option per-toy
 ```
 
 Output: `plots/pw_fixedsample_q2_moments_scatter.pdf`. Use `--center` for a truth-centered uncertainty comparison. The 15 bins are distributed across the allowed q² regions. `toy-std` requires multiple independent toys and is unsuitable for repeated fits of this fixed sample.
