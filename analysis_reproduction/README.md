@@ -89,7 +89,7 @@ python -u moments.py \
   --nbins 30 --no-center --error-option per-toy
 ```
 
-Output: `plots/pw_fixedsample_q2_moments_scatter.pdf`. Use `--center` for a truth-centered uncertainty comparison. The 15 bins are distributed across the allowed q² regions. `toy-std` requires multiple independent toys and is unsuitable for repeated fits of this fixed sample.
+Output: `plots/pw_fixedsample_q2_moments_scatter.pdf`. Use `--center` for a truth-centered uncertainty comparison. The 30 bins are distributed across the allowed q² regions. `toy-std` requires multiple independent toys and is unsuitable for repeated fits of this fixed sample.
 
 ## Run 2 and reproducibility
 
