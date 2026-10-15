@@ -1,7 +1,7 @@
 import os
 import glob
 import gc
-
+import argparse
 import numpy as np
 import pandas as pd
 import zfit
@@ -9,16 +9,24 @@ import zfit
 from sweights.experimental import Cows
 
 
-input_pattern = (
-    "./results_cow_leon_PwaveOnly_fixedFirst60k30k_SB2to1_bkg_eff_Ig_mass_degree4_floatAngles_hesse/"
-    "coverage_toys/*.h5"
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "--input-pattern",
+    type=str,
+    required=True,
+    help="Glob pattern for the input COW toy HDF5 files",
+)
+parser.add_argument(
+    "--output-dir",
+    type=str,
+    required=True,
+    help="Output directory for the moment sWeight files",
 )
 
-output_dir = (
-    "/work/submit/xiaot425/IAP2026/"
-    "results_moments_leon_massless_PwaveOnly_fixedFirst60k30k_mass_fitD4_2to1/"
-    "coverage_toys"
-)
+args = parser.parse_args()
+
+input_pattern = args.input_pattern
+output_dir = args.output_dir
 
 os.makedirs(output_dir, exist_ok=True)
 
