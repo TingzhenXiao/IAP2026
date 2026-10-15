@@ -16,8 +16,13 @@ import pandas as pd
 from sweights.experimental import Cows
 import sys
 from scipy.ndimage import gaussian_filter
-sys.path.append("/home/submit/xiaot425/IAP2026/efficiency")
+
+from pathlib import Path
+EFFICIENCY_DIR = Path(__file__).resolve().parents[1] / "efficiency"
+if EFFICIENCY_DIR.is_dir():
+    sys.path.insert(0, str(EFFICIENCY_DIR))
 import efficiency
+
 import gc
 # Extra command-line options added in this unified script:
 #   --with-bkg / --no-bkg
