@@ -995,8 +995,6 @@ if args.with_bkg:
 else:
     pdfsweights = zfit.pdf.SumPDF([pdfAS_full, pdfApp_full, pdfA0_full, pdfAq_full])
 
-datadir = os.environ["DATADIR"]
-
 reference_mapping = {
     "wA0": "/ceph/submit/data/user/a/anbeck/B2KPiMM_leon/massless_high_stats/Toyevents_forAnja_pw_longitudinal.root",
     "wApp": "/ceph/submit/data/user/a/anbeck/B2KPiMM_leon/massless_high_stats/Toyevents_forAnja_pw_par_perp.root",
