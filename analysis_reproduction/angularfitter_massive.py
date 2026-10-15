@@ -3003,9 +3003,12 @@ while i < ntoys:
 
     # Save the sWeighted data
     if not args.toy:
-        outdir_sweights = (
-            f"/work/submit/xiaot425/IAP2026/fitter/sweights/"
-            f"{args.polynomial}/{name}_mass_degree{args.bkg_series_degree}"
+        sweights_root = os.environ.get("SWEIGHTS_OUTPUT_DIR", "sweights")
+
+        outdir_sweights = os.path.join(
+            sweights_root,
+            args.polynomial,
+            f"{name}_mass_degree{args.bkg_series_degree}",
         )
         os.makedirs(outdir_sweights, exist_ok=True)
 
