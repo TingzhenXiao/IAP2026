@@ -270,8 +270,13 @@ def read_background(file, fitted_data):
     data = data.query("5.170 <= B_mass <= 5.500")
     data = data.dropna().copy()
     if "efficiency" in fitted_data.columns and "fit_weight" in fitted_data.columns:
-        sys.path.append("/home/submit/xiaot425/IAP2026/efficiency")
+
+        from pathlib import Path
+        EFFICIENCY_DIR = Path(__file__).resolve().parents[1] / "efficiency"
+        if EFFICIENCY_DIR.is_dir():
+        sys.path.insert(0, str(EFFICIENCY_DIR))
         import efficiency
+
         eff = efficiency.efficiency(
             data["cosThetaK"].to_numpy(dtype=float),
             data["cosThetaL"].to_numpy(dtype=float),
