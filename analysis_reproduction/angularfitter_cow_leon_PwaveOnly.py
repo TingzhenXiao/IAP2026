@@ -21,7 +21,7 @@ from pathlib import Path
 EFFICIENCY_DIR = Path(__file__).resolve().parents[1] / "efficiency"
 if EFFICIENCY_DIR.is_dir():
     sys.path.insert(0, str(EFFICIENCY_DIR))
-import efficiency
+import 
 
 import gc
 # Extra command-line options added in this unified script:
@@ -210,16 +210,16 @@ obs = angles * mass
 
 # Read signal sample
 if args.with_eff:
-    efficiency_input = "/ceph/submit/data/user/x/xiaot425/efficiency/efficiency_applied_output/signal_with_efficiency_pw_leon_massless.h5"
-    if os.path.exists(efficiency_input):
-        df_sig = pd.read_hdf(efficiency_input, key="data").copy()
-    elif str(args.data).endswith((".h5", ".hdf", ".hdf5")):
-        df_sig = pd.read_hdf(args.data, key="data").copy()
-    else:
-        raise FileNotFoundError(
-            "--with-eff requires the efficiency-applied HDF5 signal sample. "
-            f"Tried {efficiency_input}."
+    if not str(args.data).lower().endswith((".h5", ".hdf", ".hdf5")):
+        raise ValueError(
+            "--with-eff requires --data to point to an "
+            "efficiency-applied HDF5 file."
         )
+    if not os.path.isfile(args.data):
+        raise FileNotFoundError(
+            f"Efficiency-applied signal file not found: {args.data}"
+        )
+    df_sig = pd.read_hdf(args.data, key="data").copy()
 
 else:
     with uproot.open(args.data) as f:
