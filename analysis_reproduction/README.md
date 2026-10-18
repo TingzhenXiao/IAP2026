@@ -40,7 +40,7 @@ A **toy** is one pseudoexperiment. A **coverage file** is its event table with k
 
 Reads a weighted HDF5 table and its matching YAML, then compares extracted components and their combinations with truth references in m(Kπ) and q². It does not rerun the fit. Reference normalization uses the fitted signal yield.
 
-The reference plots produced by this script use the correct normalization. First, run `angularfitter_massless.py` or `angularfitter_massive.py` to generate the fitted results, then use `comparison_with_background.py` to plot the reference comparisons.
+The reference plots produced by this script use the correct normalization. First, run `angularfitter_massless_fraction.py` or `angularfitter_massive.py` to generate the fitted results, then use `comparison_with_background.py` to plot the reference comparisons.
 
 Example after running nominal massless toys:
 
