@@ -16,13 +16,8 @@ import pandas as pd
 from sweights.experimental import Cows
 import sys
 from scipy.ndimage import gaussian_filter
-
-from pathlib import Path
-EFFICIENCY_DIR = Path(__file__).resolve().parents[1] / "efficiency"
-if EFFICIENCY_DIR.is_dir():
-    sys.path.insert(0, str(EFFICIENCY_DIR))
-import 
-
+sys.path.append("/home/submit/xiaot425/IAP2026/efficiency")
+import efficiency
 import gc
 # Extra command-line options added in this unified script:
 #   --with-bkg / --no-bkg
@@ -210,16 +205,16 @@ obs = angles * mass
 
 # Read signal sample
 if args.with_eff:
-    if not str(args.data).lower().endswith((".h5", ".hdf", ".hdf5")):
-        raise ValueError(
-            "--with-eff requires --data to point to an "
-            "efficiency-applied HDF5 file."
-        )
-    if not os.path.isfile(args.data):
+    efficiency_input = "/ceph/submit/data/user/x/xiaot425/efficiency/efficiency_applied_output/signal_with_efficiency_pw_leon_massless.h5"
+    if os.path.exists(efficiency_input):
+        df_sig = pd.read_hdf(efficiency_input, key="data").copy()
+    elif str(args.data).endswith((".h5", ".hdf", ".hdf5")):
+        df_sig = pd.read_hdf(args.data, key="data").copy()
+    else:
         raise FileNotFoundError(
-            f"Efficiency-applied signal file not found: {args.data}"
+            "--with-eff requires the efficiency-applied HDF5 signal sample. "
+            f"Tried {efficiency_input}."
         )
-    df_sig = pd.read_hdf(args.data, key="data").copy()
 
 else:
     with uproot.open(args.data) as f:
@@ -361,30 +356,33 @@ else:
         "cosl", "cosh", "efficiency", "eff_max", "fit_weight", "is_signal",
     ])
 
-# Build one fixed sample from the first selected signal and background events.
+# Keep the full selected pools for independent toy sampling.
+df_sig_pool = df_sig.copy().reset_index(drop=True)
+df_bkg_pool = df_bkg.copy().reset_index(drop=True)
+
 n_sig_fixed = 60000
 n_bkg_fixed = 30000
 
-if len(df_sig) < n_sig_fixed or len(df_bkg) < n_bkg_fixed:
+if len(df_sig_pool) < n_sig_fixed or len(df_bkg_pool) < n_bkg_fixed:
     raise ValueError(
         f"Not enough selected events: "
-        f"signal={len(df_sig)}, background={len(df_bkg)}"
+        f"signal={len(df_sig_pool)}, background={len(df_bkg_pool)}"
     )
 
-df_sig = df_sig.iloc[:n_sig_fixed].copy().reset_index(drop=True)
-df_bkg = df_bkg.iloc[:n_bkg_fixed].copy().reset_index(drop=True)
+# Keep a fixed-size sample for initialization and non-toy mode.
+df_sig = df_sig_pool.iloc[:n_sig_fixed].copy().reset_index(drop=True)
+df_bkg = df_bkg_pool.iloc[:n_bkg_fixed].copy().reset_index(drop=True)
 
 datai = pd.concat([df_sig, df_bkg], ignore_index=True)
 
-print("\nUsing fixed first-event sample:")
-print("  Number of signal events:", len(df_sig))
-print("  Number of background events:", len(df_bkg))
-print("  Number of mixed data points:", len(datai))
+print("\nSelected event pools for toy sampling:")
+print("  Signal pool:", len(df_sig_pool))
+print("  Background pool:", len(df_bkg_pool))
+print("  Events per toy:", n_sig_fixed + n_bkg_fixed)
 
 n_sig_total = len(df_sig)
 n_bkg_total = len(df_bkg)
 
-# true values
 # check if json or yaml
 if args.settings.endswith(".yml"):
     with open(args.settings) as f:
@@ -1017,6 +1015,8 @@ if args.with_bkg:
     pdfsweights = zfit.pdf.SumPDF([pdfApp_full, pdfA0_full, pdfAq_full, pdfBkg_full])
 else:
     pdfsweights = zfit.pdf.SumPDF([pdfApp_full, pdfA0_full, pdfAq_full])
+
+datadir = os.environ["DATADIR"]
 
 reference_mapping = {
     "wA0": "/ceph/submit/data/user/a/anbeck/B2KPiMM_leon/massless_high_stats/Toyevents_forAnja_pw_longitudinal.root",
@@ -1856,12 +1856,33 @@ while i < ntoys:
     if args.toy:
         NN = args.nsig
 
-        if NN != len(datai):
+        if NN != n_sig_fixed + n_bkg_fixed:
             raise ValueError(
-                f"--nsig must be {len(datai)} for this fixed sample, got {NN}"
+                f"--nsig must be {n_sig_fixed + n_bkg_fixed} "
+                f"for this sample size, got {NN}"
             )
 
-        datatoy = datai.copy()
+        sig_toy = df_sig_pool.sample(
+            n=n_sig_fixed,
+            replace=True,
+            random_state=int(seed),
+        )
+
+        bkg_toy = df_bkg_pool.sample(
+            n=n_bkg_fixed,
+            replace=True,
+            random_state=int((seed + 1) % (2**32)),
+        )
+
+        datatoy = pd.concat(
+            [sig_toy, bkg_toy],
+            ignore_index=True,
+        )
+
+        datatoy = datatoy.sample(
+            frac=1.0,
+            random_state=int((seed + 2) % (2**32)),
+        ).reset_index(drop=True)
 
         if len(args.binned) == 2:
             datatoy.query(
@@ -2277,18 +2298,20 @@ while i < ntoys:
             cow_norm = None
             print("Using COWs with I = g from mixture norm.")
 
+        sample_pdf_cow = zfit_pdf_to_callable_3d_for_cows(
+            fitpdf,
+            obs,
+        )
         cow = Cows(
-            sample=None,
+            sample=data_cow,
+            sample_weight=datatoy["fit_weight"].to_numpy(dtype=float),
+            sample_pdf=sample_pdf_cow,
             spdf=pdfs_sig_cow,
             bpdf=pdfs_bkg_cow,
             norm=cow_norm,
             range=ranges_cow,
-            summation=False,
+            summation=True,
             yields=yields_cow,
-            integration_options={
-                "n_estimates": 8,
-                "n_points": 65536,
-            },
         )
 
         W_cow = cow._wm + np.tril(cow._wm, -1).T
@@ -3048,13 +3071,10 @@ while i < ntoys:
 
     # Save the sWeighted data
     if not args.toy:
-        sweights_root = os.environ.get("SWEIGHTS_OUTPUT_DIR", "sweights")
-
-        outdir_sweights = os.path.join(
-            sweights_root,
-                args.polynomial,
-                f"{name}_mass_degree{args.bkg_series_degree}",
-            )
+        outdir_sweights = (
+            f"/work/submit/xiaot425/IAP2026/fitter/sweights/"
+            f"{args.polynomial}/{name}_mass_degree{args.bkg_series_degree}"
+        )
         os.makedirs(outdir_sweights, exist_ok=True)
 
         datatoy["wA0"] = wA0_final
