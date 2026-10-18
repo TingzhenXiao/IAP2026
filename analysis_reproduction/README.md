@@ -57,39 +57,54 @@ PDFs go to `plots_wide/`. For massive checks, use the massive results and `massi
 
 ## 3. P-wave-only COW sample
 
-`angularfitter_cow_leon_PwaveOnly.py` fits an existing massless P-wave-only signal sample plus background and saves component weights. **This version takes the first 60,000 selected signal and 30,000 background events; every iteration reuses the same events.** Use one iteration:
+`angularfitter_cow_leon_PwaveOnly.py` fits a P-wave-only signal sample with background and saves the component weights for each toy.
 
 ```bash
 python -u angularfitter_cow_leon_PwaveOnly.py \
   --data "$EFF/signal_with_efficiency_pw_leon_massless.h5" \
-  "${COMMON[@]}" --toy --nsig 90000 --ntoys 1
+  "${COMMON[@]}" --toy --nsig 90000 --ntoys 50
 
 PW=results_cow_leon_PwaveOnly_fixedFirst60k30k_SB2to1_bkg_eff_Ig_mass_degree4_floatAngles_hesse
 ```
 
-`$PW/coverage_toys/0.h5` contains P-wave COW weights and no `wS`. This script analyses existing simulation rather than generating new decays. Different sample sizes require editing the fixed counts; increasing `--ntoys` does not produce independent toys.
+Each toy contains 60,000 signal events and 30,000 background events, sampled independently from the selected event pools. Different toys use different event samples, while the sample size and signal/background composition remain fixed.
+
+The output `coverage_toys/<i>.h5` contains the event-level kinematics, efficiency information, and COW weights (`wA0`, `wApp`, `wAq`, `wBkg`). The corresponding fit parameters are saved in `<i>.yml` in the parent results directory.
+
+These are resampled pseudoexperiments from existing simulated events, not newly generated decays. The `--nsig` argument must match the total number of events per toy (90,000 for this configuration).
 
 ## 4. Mass-only signal weights and angular moments
 
-`make_moment_sweights_massless_PwaveOnly.py` reads the saved COW events, fits B mass alone, and adds `signal_sweight` using 1D COWs with a degree-4 background expansion. It preserves the events for a paired comparison. Edit its top-level `input_pattern` and `output_dir` if needed; it has no CLI options.
+`make_moment_sweights_massless_PwaveOnly.py` reads the saved COW event tables, performs a one-dimensional B-mass fit, and adds `signal_sweight`. It preserves the event sample so that the moment and COW methods can be compared using the same events.
+
+Edit the script's `input_pattern` and `output_dir` to point to the desired COW toy files and moment output directory. The script has no CLI options.
 
 ```bash
 python -u make_moment_sweights_massless_PwaveOnly.py
 ```
 
-`moments.py` compares P-wave COW fractions with angular moments (`-S2c`, `4S2s`) using `signal_sweight / efficiency`, and truth moments from the high-statistics P-wave ROOT sample.
+`moments.py` compares the P-wave COW fractions with the angular moments (`-S2c` and `4S2s`), using `signal_sweight / efficiency` for the moment calculation. Truth moments are calculated from the high-statistics P-wave ROOT sample.
+
+For a single-toy comparison:
 
 ```bash
 mkdir -p plots
 MOM=/work/submit/xiaot425/IAP2026/results_moments_leon_massless_PwaveOnly_fixedFirst60k30k_mass_fitD4_2to1/coverage_toys
+
 python -u moments.py \
-  --input "$PW/coverage_toys/0.h5" --moment-input "$MOM/0.h5" \
+  --input "$PW/coverage_toys/0.h5" \
+  --moment-input "$MOM/0.h5" \
   --data "$LEON/massless_high_stats/Toyevents_forAnja_pw.root" \
-  --name pw_fixedsample --qsq 1.1 19.0 --mKpi 0.746 1.5 \
+  --name pw_toy0 \
+  --qsq 1.1 19.0 --mKpi 0.746 1.5 \
   --nbins 30 --no-center --error-option per-toy
 ```
 
-Output: `plots/pw_fixedsample_q2_moments_scatter.pdf`. Use `--center` for a truth-centered uncertainty comparison. The 30 bins are distributed across the allowed q² regions. `toy-std` requires multiple independent toys and is unsuitable for repeated fits of this fixed sample.
+Use matching toy indices for `--input` and `--moment-input`. Both files must represent the same underlying events; matching filenames alone do not guarantee this.
+
+The output is saved as `plots/pw_toy0_q2_moments_scatter.pdf`. Run the command separately for each toy to produce one plot per toy. When processing multiple toys together, the script combines information across toys rather than producing a separate plot for each one.
+
+Use `--center` for a truth-centered uncertainty comparison. `--error-option per-toy` uses the propagated uncertainties, while `--error-option toy-std` uses the toy-to-toy standard deviation and therefore requires multiple independent toys.
 
 ## Run 2 and reproducibility
 
