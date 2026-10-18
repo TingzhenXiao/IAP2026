@@ -36,16 +36,18 @@ Fit YAMLs, parameter tables, and PDFs are saved under `results_cow_<configuratio
 
 A **toy** is one pseudoexperiment. A **coverage file** is its event table with kinematics, efficiency information, and component weights (`wA0`, `wApp`, `wS`, `wAq`, `wBkg`), saved with HDF5 key `data`. It is an input to uncertainty checks, not a separate dataset or a calculated coverage result. Fit weights are `eff_max / efficiency`, so weighted yields differ from event counts.
 
-## 2. Reference checks: comparison.py
+## 2. Reference checks: comparison_with_background.py
 
 Reads a weighted HDF5 table and its matching YAML, then compares extracted components and their combinations with truth references in m(Kπ) and q². It does not rerun the fit. Reference normalization uses the fitted signal yield.
+
+The reference plots produced by this script use the correct normalization. First, run `angularfitter_massless.py` or `angularfitter_massive.py` to generate the fitted results, then use `comparison_with_background.py` to plot the reference comparisons.
 
 Example after running nominal massless toys:
 
 ```bash
 mkdir -p plots_wide
 RESULTS=results_cow_toy_massless_bkg_eff_Ig_mass_degree4_floatAngles_hesse
-python -u comparison.py \
+python -u comparison_with_background.py \
   --input "$RESULTS/coverage_toys/0.h5" --results "$RESULTS/0.yml" \
   --a0 "$LEON/massless_high_stats/Toyevents_forAnja_pw_longitudinal.root" \
   --a1 "$LEON/massless_high_stats/Toyevents_forAnja_pw_par_perp.root" \
