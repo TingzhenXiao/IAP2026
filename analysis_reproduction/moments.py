@@ -355,30 +355,29 @@ for key, label, unit in zip(['q2'], [r'$q^2$'], [r'GeV$^2/c^4$']):
                         else:
                             continue
                         values_this_toy[ibin], uncertainties_this_toy[ibin] = WeightedMomUnc(
-                            moment_function,moment_weight
+                            moment_function, moment_weight
                         )
 
-                        if j == 0:
-                            cow_file = args.input[0]
-                            cow_data = pd.read_hdf(cow_file)
+                        cow_file = args.input[j]
+                        cow_data = pd.read_hdf(cow_file)
 
-                            cow_bin = cow_data.query(
-                                f"{key}>{xmi} and {key}<{xma}"
-                            )
+                        cow_bin = cow_data.query(
+                            f"{key}>{xmi} and {key}<{xma}"
+                        )
 
-                            cow_A0 = cow_bin["wA0"].sum()
-                            cow_App = cow_bin["wApp"].sum()
-                            cow_norm = cow_A0 + cow_App
+                        cow_A0 = cow_bin["wA0"].sum()
+                        cow_App = cow_bin["wApp"].sum()
+                        cow_norm = cow_A0 + cow_App
 
-                            print(
-                                f"[DEBUG bin {ibin}]",
-                                "q2 range =", (xmi, xma),
-                                "moment =", values_this_toy[ibin],
-                                "cow_A0_raw =", cow_A0,
-                                "cow_App_raw =", cow_App,
-                                "cow_A0_frac =", cow_A0 / cow_norm if cow_norm != 0 else np.nan,
-                                "cow_App_frac =", cow_App / cow_norm if cow_norm != 0 else np.nan,
-                            )
+                        print(
+                            f"[DEBUG bin {ibin}]",
+                            "q2 range =", (xmi, xma),
+                            "moment =", values_this_toy[ibin],
+                            "cow_A0_raw =", cow_A0,
+                            "cow_App_raw =", cow_App,
+                            "cow_A0_frac =", cow_A0 / cow_norm if cow_norm != 0 else np.nan,
+                            "cow_App_frac =", cow_App / cow_norm if cow_norm != 0 else np.nan,
+                        )
 
                     moment_values[j] = values_this_toy
                     moment_uncertainties[j] = uncertainties_this_toy
